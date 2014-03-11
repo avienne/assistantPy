@@ -6,9 +6,10 @@ import sys, tty, termios, signal
 import numpy as np
 import math
 from std_msgs.msg import Int32
+
 #CONSTANTE
 VALEUR_X = 0.2
-TIMEOUT_USER = 3
+TIMEOUT_USER = 10
 
 #ENUM
 class Status:
@@ -37,6 +38,7 @@ def stopFollowingTimeOut(event):
      global timer, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
+     print "T O"
      timer.shutdown()
 
 def callbackKinectNewUser(msg):
@@ -53,6 +55,7 @@ def callbackKinectDeleteUser(msg):
     if status_robot == Status.SQUELETTE and msg.data == num_user:
         status_robot = Status.NORMAL
         num_user = 0
+	print "Del User"
     	
 """def callbackBalance(msg):
 DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non ?)
@@ -85,14 +88,16 @@ def navigationturtle():
     #rospy.Subscriber("camera/depth/image", Type??, callbackUltraSon) #callback ultrason
     
     #departBase()    
-    global status_robot, pos_obstacle
+    global status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
-            if pos_obstacle == PosObstacle.RIEN:
+            print "Status squel : user %d" % num_user
+            if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
                 pub.publish(twist)
         elif status_robot == Status.NORMAL:
+	    print "Status norm"
 	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
