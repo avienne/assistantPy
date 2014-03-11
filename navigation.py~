@@ -37,7 +37,10 @@ def stopFollowingTimeOut(event):
      global timer, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
+     print "to"
      timer.shutdown()
+     print "stop"
+
 
 def callbackKinectNewUser(msg):
     global status_robot
@@ -45,7 +48,8 @@ def callbackKinectNewUser(msg):
     if status_robot == Status.NORMAL:
         status_robot = Status.SQUELETTE
         num_user = msg.data
-        timer = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
+        print "start timer"
+	timer = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
 
 def callbackKinectDeleteUser(msg):
     global status_robot
