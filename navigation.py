@@ -8,7 +8,7 @@ import math
 from std_msgs.msg import Int32
 #CONSTANTE
 VALEUR_X = 0.2
-TIMEOUT_USER = 1
+TIMEOUT_USER = 3
 
 #ENUM
 class Status:
@@ -85,8 +85,7 @@ def navigationturtle():
     #rospy.Subscriber("camera/depth/image", Type??, callbackUltraSon) #callback ultrason
     
     #departBase()    
-    global status_robot
-    global pos_obstacle
+    global status_robot, pos_obstacle
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
             if pos_obstacle == PosObstacle.RIEN:
@@ -111,8 +110,7 @@ def navigationturtle():
                 twist.angular.z = 4.0
                 pub.publish(twist)"""
         #elif status_robot == Status.RETOUR:
-            #code retour base	
-        rospy.sleep(0.5)
+            #code retour base
 
 if __name__ == '__main__':
     num_user = 0
