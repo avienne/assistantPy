@@ -38,7 +38,7 @@ def stopFollowingTimeOut(event):
      global timer, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
-     print "T O"
+     rospy.logdebug("T O")
      timer.shutdown()
 
 def callbackKinectNewUser(msg):
@@ -52,10 +52,10 @@ def callbackKinectNewUser(msg):
 def callbackKinectDeleteUser(msg):
     global status_robot
     global num_user
-    print "Del User"
     if status_robot == Status.SQUELETTE and msg.data == num_user:
         status_robot = Status.NORMAL
         num_user = 0
+	rospy.logdebug("Del User")
     	
 """def callbackBalance(msg):
 DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non ?)
@@ -91,13 +91,13 @@ def navigationturtle():
     global status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
-            print "Status squel : user %d" % num_user
+            rospy.logdebug("Status squel : user %d",num_user)
             if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
                 pub.publish(twist)
         elif status_robot == Status.NORMAL:
-	    print "Status norm"
+	    rospy.logdebug("Status norm")
 	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X

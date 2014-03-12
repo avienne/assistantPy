@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -38,7 +38,7 @@ def stopFollowingTimeOut(event):
      global timer, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
-     print "T O"
+     rospy.logdebug("T O")
      timer.shutdown()
 
 def callbackKinectNewUser(msg):
@@ -55,15 +55,14 @@ def callbackKinectDeleteUser(msg):
     if status_robot == Status.SQUELETTE and msg.data == num_user:
         status_robot = Status.NORMAL
         num_user = 0
-	print "Del User"
+	rospy.logdebug("Del User")
     	
 """def callbackBalance(msg):
 DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non ?)
 """
 
-"""def callbackUltraSon(msg):
-DEFINIR CE QUE LES ULTRASONS RENVOIENT (que a partir d'une certaine distance pour detecter une personne seulement ??)
-"""
+def callbackUltraSonAvant(msg):
+    rospy.logdebug("%d",msg.range)
 
 def departBase():
     """On sort du dock"""
@@ -79,25 +78,24 @@ def departBase():
 
 def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
-    rospy.init_node('navigationturtle')
+    rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
-    #rospy.Subscriber("camera/depth/image", Type??, callbackinfra) #callback capteur infrarouge1
-    rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
+    # rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
+    rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback Ultrason1
     #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
-    #rospy.Subscriber("camera/depth/image", Type??, callbackUltraSon) #callback ultrason
     
     #departBase()    
     global status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
-            print "Status squel : user %d" % num_user
+            rospy.logdebug("Status squel : user %d",num_user)
             if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
                 pub.publish(twist)
         elif status_robot == Status.NORMAL:
-	    print "Status norm"
+	    rospy.logdebug("Status norm")
 	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
