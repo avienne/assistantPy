@@ -16,6 +16,7 @@ TIMEOUT_SERVEUR = 5
 ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
+SEUIL_OBSTACLE = 20
 
 #ENUM
 class Status:
@@ -24,13 +25,6 @@ class Status:
     SQUELETTE = 2
     SERVEUR = 3
 
-class PosObstacle:
-    RIEN = 0
-    AV_GAUCHE = 1
-    AV_DROITE = 2
-    GAUCHE = 3
-    DROITE = 4
-
 class Direction : 
     NORD = 0
     EST = 1
@@ -38,15 +32,24 @@ class Direction :
     NE = 3
     NO = 4
 
+#CLASS
 class CurrentUltrasoundMesurement :
     timestamp = 0
     ultrasonAvant = 0
     ultrasonGauche = 0
     ultrasonDroit = 0
- 
+
+class PosObstacle:
+    avant = False
+    av_gauche = False
+    av_droite = False
+    cote_gauche = False
+    cote_droit = False
+    arriere = False
+
 #GLOBAL
 status_robot = Status.SQUELETTE
-pos_obstacle = PosObstacle.RIEN
+pos_obstacle = PosObstacle()
 num_user = 0
 timer_squelette = 0
 timer_serveur = 0
@@ -86,9 +89,52 @@ def callbackKinectDeleteUser(msg):
 	rospy.logdebug("Del User")
     	
 """def callbackBalance(msg):
-DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non ?)
 """
 
+#Fonction callback IR
+def callbackIRAvant(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.avant = True
+    else:
+        pos_obstacle.avant = False
+
+def callbackIRAvantGauche(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.av_gauche = True
+    else:
+        pos_obstacle.av_gauche = False
+
+def callbackIRAvantDroit(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.av_droit = True
+    else:
+        pos_obstacle.av_droit = False
+
+def callbackIRCoteGauche(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.cote_gauche = True
+    else:
+        pos_obstacle.cote_gauche = False
+
+def callbackIRCoteDroit(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.cote_droit = True
+    else:
+        pos_obstacle.cote_droit = False
+
+def callbackIRArriere(msg):
+    global pos_obstacle
+    if msg.range <= SEUIL_OBSTACLE:
+        pos_obstacle.arriere = True
+    else:
+        pos_obstacle.arriere = False
+        
+#Fonction callback ultrason
 def callbackUltrasonAvant(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
@@ -130,6 +176,10 @@ def callbackUltrasonDroit(msg):
             majDirection()
         else :
             rospy.logdebug("outdated usDroit")
+
+#Utils
+def obstacle():
+    return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
 	    
 def majDirection() :
     global direction, currentUs, status_robot
@@ -143,7 +193,23 @@ def majDirection() :
     else :
 	direction = Direction.NORD
     rospy.logdebug("%d", direction)
-       
+
+def eviterObstacle():
+    global pos_obstacle
+    twist = Twist()
+    if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
+        twist.angular.z = -1.0
+    elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
+        twist.angular.z = 1.0
+    elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
+        if not pos_obstacle.cote_gauche:
+            twist.angular.z = 2.0
+        elif not pos_obstacle.cote_droit:
+            twist.angular.z = -2.0
+    else:
+        twist.angular.z = 4.0
+    return twist    
+
 def departBase():
     """On sort du dock"""
     twist = Twist()
@@ -159,44 +225,44 @@ def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
-    # rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
+    rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
-    rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback Ultrason1
-    rospy.Subscriber("/US2", Range, callbackUltrasonGauche) #callback Ultrason1
-    rospy.Subscriber("/US3", Range, callbackUltrasonDroit) #callback Ultrason1
+    
+    #Inscription topic ultrason
+    rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback UltrasonAvant
+    rospy.Subscriber("/US2", Range, callbackUltrasonGauche) #callback UltrasonGauche
+    rospy.Subscriber("/US3", Range, callbackUltrasonDroit) #callback UltrasonDroit
+    
+    #Inscription topic infrarouge
+    rospy.Subscriber("/IR1", Range, callbackIRAvant) #callback IR avant
+    rospy.Subscriber("/IR2", Range, callbackIRAvantGauche) #callback IR avant gauche
+    rospy.Subscriber("/IR3", Range, callbackIRAvantDroit) #callback IR avant droit
+    rospy.Subscriber("/IR4", Range, callbackIRCoteGauche) #callback IR cote gauche
+    rospy.Subscriber("/IR5", Range, callbackIRCoteDroit) #callback IR cote droit
+    rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
+    
+    
     #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
     
     #departBase()    
     global direction, status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
-        if status_robot == Status.SQUELETTE:
-            if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
+        if (obstacle()):
+            twist = eviterObstacle()
+            pub.publish(twist)
+        else:
+	    if status_robot == Status.SQUELETTE:
                 twist = Twist()
-                twist.linear.x = VALEUR_X
-                if direction == Direction.NO :
-                    twist.angular.z = VALEUR_ANGLE
-                elif direction == Direction.NE: 
-                    twist.angular.z = -VALEUR_ANGLE
-                pub.publish(twist)
-        elif status_robot == Status.NORMAL:
-	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
-                twist = Twist()
-                twist.linear.x = VALEUR_X
-                pub.publish(twist)
-            elif pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.GAUCHE:
-                twist = Twist()
-                twist.angular.z = -2.0
-                pub.publish(twist)
-            elif pos_obstacle != PosObstacle.AV_DROITE and pos_obstacle != PosObstacle.DROITE:
-                twist = Twist()
-                twist.angular.z = 2.0
-                pub.publish(twist) 	    
-            else:
-                twist = Twist()s
-                twist.angular.z = 4.0
-                pub.publish(twist)"""
-        #elif status_robot == Status.RETOUR:
-            #code retour base
+		twist.linear.x = VALEUR_X
+		if direction == Direction.NO :
+		    twist.angular.z = VALEUR_ANGLE
+		elif direction == Direction.NE: 
+		    twist.angular.z = -VALEUR_ANGLE
+		    pub.publish(twist)
+		#elif status_robot == Status.NORMAL:
+		    
+		#elif status_robot == Status.RETOUR:
+		    #code retour base
 
 if __name__ == '__main__':
     num_user = 0
