@@ -5,7 +5,7 @@ from geometry_msgs.msg import Twist
 import sys, tty, termios, signal
 import numpy as np
 import math
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Float64
 from sensor_msgs.msg import Range
 
 #CONSTANTE
@@ -17,6 +17,7 @@ ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
 SEUIL_OBSTACLE = 20
+BALANCE_ERR = 1
 
 #ENUM
 class Status:
@@ -57,9 +58,7 @@ direction = Direction.NORD
 currentUs = CurrentUltrasoundMesurement()
 
 #FUNCTION
-"""def callbackInfra(msg):
-    pos_obstacle = msg"""
-
+#Utils
 def stopFollowingTimeOut(event):
      global timer_squelette, status_robot, num_user
      status_robot = Status.NORMAL
@@ -71,27 +70,67 @@ def stopServTimeOut(event):
     global status_robot
     status_robot = Status.NORMAL
     time_serveur.shutdown()
+    # On lui fait Baisser la "tete"	
+    kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
+    kinectMotorPub.publish(-15)
 
+def obstacle():
+    return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
+	    
+def majDirection() :
+    global direction, currentUs, status_robot
+    if currentUs.ultrasonAvant <= SEUIL_ARRET:
+        status_robot = Status.SERVEUR
+        timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
+	# On lui fait lever la "tete"	
+	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
+	kinectMotorPub.publish(15)
+    elif currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
+	direction = Direction.NO
+    elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
+	direction = Direction.NE
+    else :
+	direction = Direction.NORD
+
+    rospy.logdebug("%d", direction)
+
+def eviterObstacle():
+    global pos_obstacle
+    twist = Twist()
+    if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
+        twist.angular.z = -1.0
+    elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
+        twist.angular.z = 1.0
+    elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
+        if not pos_obstacle.cote_gauche:
+            twist.angular.z = 2.0
+        elif not pos_obstacle.cote_droit:
+            twist.angular.z = -2.0
+    else:
+        twist.angular.z = 4.0
+    return twist    
+
+#Fonctions callback
 def callbackKinectNewUser(msg):
-    global status_robot
-    global num_user, timer_squelette
+    global num_user, timer_squelette, status_robot
     if status_robot == Status.NORMAL:
         status_robot = Status.SQUELETTE
         num_user = msg.data
         timer_squelette = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
 
 def callbackKinectDeleteUser(msg):
-    global status_robot
-    global num_user
+    global status_robot, num_user
     if status_robot == Status.SQUELETTE and msg.data == num_user:
         status_robot = Status.NORMAL
         num_user = 0
 	rospy.logdebug("Del User")
     	
-"""def callbackBalance(msg):
-"""
+def callbackBalance(msg):
+    global status_robot
+    if msg.range >= 0 and msg.range <= BALANCE_ERR:
+        status_robot = Status.RETOUR
 
-#Fonction callback IR
+#Fonctions callback IR
 def callbackIRAvant(msg):
     global pos_obstacle
     if msg.range <= SEUIL_OBSTACLE:
@@ -134,7 +173,7 @@ def callbackIRArriere(msg):
     else:
         pos_obstacle.arriere = False
         
-#Fonction callback ultrason
+#Fonctions callback ultrason
 def callbackUltrasonAvant(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
@@ -177,52 +216,8 @@ def callbackUltrasonDroit(msg):
         else :
             rospy.logdebug("outdated usDroit")
 
-#Utils
-def obstacle():
-    return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
-	    
-def majDirection() :
-    global direction, currentUs, status_robot
-    if currentUs.ultrasonAvant <= SEUIL_ARRET:
-        status_robot = Status.SERVEUR
-        timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
-    elif currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
-	direction = Direction.NO
-    elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
-	direction = Direction.NE
-    else :
-	direction = Direction.NORD
-    rospy.logdebug("%d", direction)
-
-def eviterObstacle():
-    global pos_obstacle
-    twist = Twist()
-    if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
-        twist.angular.z = -1.0
-    elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
-        twist.angular.z = 1.0
-    elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
-        if not pos_obstacle.cote_gauche:
-            twist.angular.z = 2.0
-        elif not pos_obstacle.cote_droit:
-            twist.angular.z = -2.0
-    else:
-        twist.angular.z = 4.0
-    return twist    
-
-def departBase():
-    """On sort du dock"""
-    twist = Twist()
-    twist.linear.x = -0.2
-    pub.publish(twist)
-
-    """On fait demi-tour"""
-    twist = Twist()
-    twist.angular.z = 4.0
-    pub.publish(twist)
-
 def navigationturtle():
-    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
+    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
     rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
@@ -247,7 +242,7 @@ def navigationturtle():
     #departBase()    
     global direction, status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
-        if (obstacle()):
+        if obstacle():
             twist = eviterObstacle()
             pub.publish(twist)
         else:
@@ -260,7 +255,7 @@ def navigationturtle():
 		    twist.angular.z = -VALEUR_ANGLE
 		    pub.publish(twist)
 		#elif status_robot == Status.NORMAL:
-		    
+
 		#elif status_robot == Status.RETOUR:
 		    #code retour base
 
