@@ -36,7 +36,7 @@ class Direction :
 class CurrentUltrasoundMesurement :
     timestamp = 0
     ultrasonAvant = 0
-    ultrasontGauche = 0
+    ultrasonGauche = 0
     ultrasonDroit = 0
  
 #GLOBAL
@@ -122,9 +122,9 @@ def callbackUltrasonDroit(msg):
 	    
 def majDirection() :
     global direction, currentUs
-    if currentUs.ultrasontGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasontGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
+    if currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
 	direction = Direction.NO
-    elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasontDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
+    elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
 	direction = Direction.NE
     else :
 	direction = Direction.NORD
