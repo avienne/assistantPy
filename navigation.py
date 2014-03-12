@@ -12,14 +12,17 @@ from sensor_msgs.msg import Range
 VALEUR_X = 0.2
 VALEUR_ANGLE = 1
 TIMEOUT_USER = 10
+TIMEOUT_SERVEUR = 5
 ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
+SEUIL_ARRET = 60
 
 #ENUM
 class Status:
     NORMAL = 0
     RETOUR = 1
     SQUELETTE = 2
+    SERVEUR = 3
 
 class PosObstacle:
     RIEN = 0
@@ -34,6 +37,7 @@ class Direction :
     OUEST = 2
     NE = 3
     NO = 4
+
 class CurrentUltrasoundMesurement :
     timestamp = 0
     ultrasonAvant = 0
@@ -44,7 +48,8 @@ class CurrentUltrasoundMesurement :
 status_robot = Status.SQUELETTE
 pos_obstacle = PosObstacle.RIEN
 num_user = 0
-timer = 0
+timer_squelette = 0
+timer_serveur = 0
 direction = Direction.NORD
 currentUs = CurrentUltrasoundMesurement()
 
@@ -53,19 +58,24 @@ currentUs = CurrentUltrasoundMesurement()
     pos_obstacle = msg"""
 
 def stopFollowingTimeOut(event):
-     global timer, status_robot, num_user
+     global timer_squelette, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
      rospy.logdebug("T O")
-     timer.shutdown()
+     timer_squelette.shutdown()
+
+def stopServTimeOut(event):
+    global status_robot
+    status_robot = Status.NORMAL
+    time_serveur.shutdown()
 
 def callbackKinectNewUser(msg):
     global status_robot
-    global num_user, timer
+    global num_user, timer_squelette
     if status_robot == Status.NORMAL:
         status_robot = Status.SQUELETTE
         num_user = msg.data
-        timer = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
+        timer_squelette = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
 
 def callbackKinectDeleteUser(msg):
     global status_robot
@@ -122,8 +132,11 @@ def callbackUltrasonDroit(msg):
             rospy.logdebug("outdated usDroit")
 	    
 def majDirection() :
-    global direction, currentUs
-    if currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
+    global direction, currentUs, status_robot
+    if currentUs.ultrasonAvant <= SEUIL_ARRET:
+        status_robot = Status.SERVEUR
+        timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
+    elif currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
 	direction = Direction.NO
     elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
 	direction = Direction.NE
