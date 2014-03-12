@@ -10,6 +10,7 @@ from sensor_msgs.msg import Range
 
 #CONSTANTE
 VALEUR_X = 0.2
+VALEUR_ANGLE = 1
 TIMEOUT_USER = 10
 ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
@@ -153,13 +154,17 @@ def navigationturtle():
     #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
     
     #departBase()    
-    global status_robot, pos_obstacle, num_user
+    global direction, status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
             if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
-        #        pub.publish(twist)
+                if direction == Direction.NO :
+                    twist.angular.z = VALEUR_ANGLE
+                elif direction == Direction.NE: 
+                    twist.angular.z = -VALEUR_ANGLE
+                pub.publish(twist)
         elif status_robot == Status.NORMAL:
 	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
