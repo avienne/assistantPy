@@ -87,7 +87,7 @@ def callbackUltrasonAvant(msg):
             rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonAvant = msg.range
-            rospy.logdebug("new UsAvant : %d", msg.header.stamp.secs, msg.range)
+            rospy.logdebug("new UsAvant : %d", msg.range)
             majDirection()
         else :
             rospy.logdebug("outdated usavant")
@@ -101,7 +101,7 @@ def callbackUltrasonGauche(msg):
             rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonGauche = msg.range
-            rospy.logdebug("new UsGauche : %d", msg.header.stamp.secs, msg.range)
+            rospy.logdebug("new UsGauche : %d", msg.range)
             majDirection()
         else : 
             rospy.logdebug("outdated usgauche")
@@ -115,7 +115,7 @@ def callbackUltrasonDroit(msg):
             rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.seq ==  currentUs.timestamp :
             currentUs.ultrasonDroit = msg.range
-            rospy.logdebug("new UsDroit : %d", msg.header.stamp.secs, msg.range)
+            rospy.logdebug("new UsDroit : %d", msg.range)
             majDirection()
         else :
             rospy.logdebug("outdated usDroit")
