@@ -81,13 +81,13 @@ DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non
 def callbackUltrasonAvant(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
-        if msg.header.seq >  currentUs.timestamp :
-	    currentUs.timestamp = msg.header.seq
+        if msg.header.stamp.secs >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonAvant = msg.range
-            rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.seq, msg.range)
-        elif msg.header.seq ==  currentUs.timestamp :
+            rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.stamp.secs, msg.range)
+        elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonAvant = msg.range
-            rospy.logdebug("new UsAvant : %d", msg.header.seq, msg.range)
+            rospy.logdebug("new UsAvant : %d", msg.header.stamp.secs, msg.range)
             majDirection()
         else :
             rospy.logdebug("outdated usavant")
@@ -95,13 +95,13 @@ def callbackUltrasonAvant(msg):
 def callbackUltrasonGauche(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
-        if msg.header.seq >  currentUs.timestamp :
-	    currentUs.timestamp = msg.header.seq
+        if  msg.header.stamp.secs >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonGauche = msg.range
-            rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.seq, msg.range)
-        elif msg.header.seq ==  currentUs.timestamp :
+            rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.stamp.secs, msg.range)
+        elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonGauche = msg.range
-            rospy.logdebug("new UsGauche : %d", msg.header.seq, msg.range)
+            rospy.logdebug("new UsGauche : %d", msg.header.stamp.secs, msg.range)
             majDirection()
         else : 
             rospy.logdebug("outdated usgauche")
@@ -109,13 +109,13 @@ def callbackUltrasonGauche(msg):
 def callbackUltrasonDroit(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
-        if msg.header.seq >  currentUs.timestamp :
-	    currentUs.timestamp = msg.header.seq
+        if msg.header.stamp.secs >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonDroit = msg.range
-            rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.seq, msg.range)
+            rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.seq ==  currentUs.timestamp :
             currentUs.ultrasonDroit = msg.range
-            rospy.logdebug("new UsDroit : %d", msg.header.seq, msg.range)
+            rospy.logdebug("new UsDroit : %d", msg.header.stamp.secs, msg.range)
             majDirection()
         else :
             rospy.logdebug("outdated usDroit")
