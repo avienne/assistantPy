@@ -11,6 +11,8 @@ from sensor_msgs.msg import Range
 #CONSTANTE
 VALEUR_X = 0.2
 TIMEOUT_USER = 10
+ULTRASON_MAX_DIST = 150
+ULTRASON_ERR = 20
 
 #ENUM
 class Status:
@@ -25,11 +27,25 @@ class PosObstacle:
     GAUCHE = 3
     DROITE = 4
 
+class Direction : 
+    NORD = 0
+    EST = 1
+    OUEST = 2
+    NE = 3
+    NO = 4
+class CurrentUltrasoundMesurement :
+    timestamp = 0
+    ultrasonAvant = 0
+    ultrasontGauche = 0
+    ultrasonDroit = 0
+ 
 #GLOBAL
-status_robot = Status.NORMAL
+status_robot = Status.SQUELETTE
 pos_obstacle = PosObstacle.RIEN
 num_user = 0
 timer = 0
+direction = Direction.NORD
+currentUs = CurrentUltrasoundMesurement()
 
 #FUNCTION
 """def callbackInfra(msg):
@@ -63,8 +79,57 @@ DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non
 """
 
 def callbackUltrasonAvant(msg):
-    rospy.logdebug("%d",msg.range)
+    global status_robot, direction, currentUs
+    if status_robot == Status.SQUELETTE :
+        if msg.header.seq >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.seq
+            currentUs.ultrasonAvant = msg.range
+            rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.seq, msg.range)
+        elif msg.header.seq ==  currentUs.timestamp :
+            currentUs.ultrasonAvant = msg.range
+            rospy.logdebug("new UsAvant : %d", msg.header.seq, msg.range)
+            majDirection()
+        else :
+            rospy.logdebug("outdated usavant")
 
+def callbackUltrasonGauche(msg):
+    global status_robot, direction, currentUs
+    if status_robot == Status.SQUELETTE :
+        if msg.header.seq >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.seq
+            currentUs.ultrasonGauche = msg.range
+            rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.seq, msg.range)
+        elif msg.header.seq ==  currentUs.timestamp :
+            currentUs.ultrasonGauche = msg.range
+            rospy.logdebug("new UsGauche : %d", msg.header.seq, msg.range)
+            majDirection()
+        else : 
+            rospy.logdebug("outdated usgauche")
+
+def callbackUltrasonDroit(msg):
+    global status_robot, direction, currentUs
+    if status_robot == Status.SQUELETTE :
+        if msg.header.seq >  currentUs.timestamp :
+	    currentUs.timestamp = msg.header.seq
+            currentUs.ultrasonDroit = msg.range
+            rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.seq, msg.range)
+        elif msg.header.seq ==  currentUs.timestamp :
+            currentUs.ultrasonDroit = msg.range
+            rospy.logdebug("new UsDroit : %d", msg.header.seq, msg.range)
+            majDirection()
+        else :
+            rospy.logdebug("outdated usDroit")
+	    
+def majDirection() :
+    global direction, currentUs
+    if currentUs.ultrasontGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasontGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
+	direction = Direction.NO
+    elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasontDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
+	direction = Direction.NE
+    else :
+	direction = Direction.NORD
+    rospy.logdebug("%d", direction)
+       
 def departBase():
     """On sort du dock"""
     twist = Twist()
@@ -76,7 +141,6 @@ def departBase():
     twist.angular.z = 4.0
     pub.publish(twist)
 
-
 def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
@@ -84,19 +148,19 @@ def navigationturtle():
     # rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
     rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback Ultrason1
+    rospy.Subscriber("/US2", Range, callbackUltrasonGauche) #callback Ultrason1
+    rospy.Subscriber("/US2", Range, callbackUltrasonDroit) #callback Ultrason1
     #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
     
     #departBase()    
     global status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if status_robot == Status.SQUELETTE:
-            rospy.logdebug("Status squel : user %d",num_user)
             if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
-                pub.publish(twist)
+        #        pub.publish(twist)
         elif status_robot == Status.NORMAL:
-	    rospy.logdebug("Status norm")
 	    """if pos_obstacle != PosObstacle.AV_GAUCHE and pos_obstacle != PosObstacle.AV_DROITE:
                 twist = Twist()
                 twist.linear.x = VALEUR_X
