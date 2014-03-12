@@ -6,7 +6,7 @@ import sys, tty, termios, signal
 import numpy as np
 import math
 from std_msgs.msg import Int32
-from sensor_msg.msg import Range
+from sensor_msgs.msg import Range
 
 #CONSTANTE
 VALEUR_X = 0.2
