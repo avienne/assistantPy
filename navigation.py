@@ -149,7 +149,7 @@ def navigationturtle():
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
     rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback Ultrason1
     rospy.Subscriber("/US2", Range, callbackUltrasonGauche) #callback Ultrason1
-    rospy.Subscriber("/US2", Range, callbackUltrasonDroit) #callback Ultrason1
+    rospy.Subscriber("/US3", Range, callbackUltrasonDroit) #callback Ultrason1
     #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
     
     #departBase()    
