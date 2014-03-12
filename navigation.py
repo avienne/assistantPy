@@ -62,7 +62,7 @@ def callbackKinectDeleteUser(msg):
 DEFINIR CE QUE LA BALANCE RENVOIT (poid ? mais si plateau ou autre vide != 0 non ?)
 """
 
-def callbackUltraSonAvant(msg):
+def callbackUltrasonAvant(msg):
     rospy.logdebug("%d",msg.range)
 
 def departBase():
