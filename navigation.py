@@ -114,12 +114,14 @@ def majDirection() :
 def eviterObstacle():
     global pos_obstacle
     twist = Twist()
-    twist.linear.x = 0.1
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
+        #twist.linear.x = 0.1
         twist.angular.z = -VALEUR_ANGLE
     elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
+        #twist.linear.x = 0.1
         twist.angular.z = VALEUR_ANGLE
     elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
+        #twist.linear.x = 0.1
         if not pos_obstacle.cote_gauche:
             twist.angular.z = VALEUR_ANGLE*2
         elif not pos_obstacle.cote_droit:
