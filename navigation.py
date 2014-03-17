@@ -272,7 +272,7 @@ def navigationturtle():
     while not rospy.is_shutdown():
         if obstacle():
             twist = eviterObstacle()
-            pub.publish(twist)
+            #pub.publish(twist)
         else:
 	    if status_robot == Status.SQUELETTE:
                 #rospy.logdebug("Squelette")
