@@ -102,13 +102,13 @@ def majDirection() :
 	# On lui fait lever la "tete"
 	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
 	kinectMotorPub.publish(15)
-    if currentUs.ultrasonGauche <= ULTRASON_MAX_DIST or currentUs.ultrasonDroit <= ULTRASON_MAX_DIST or currentUs.ultrasonAvant <= ULTRASON_MAX_DIST :
-        elif currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
+    elif currentUs.ultrasonGauche <= ULTRASON_MAX_DIST or currentUs.ultrasonDroit <= ULTRASON_MAX_DIST or currentUs.ultrasonAvant <= ULTRASON_MAX_DIST :
+        if currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
 	    direction = Direction.NO
         elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
 	    direction = Direction.NE
-        else :
-	    direction = Direction.NORD
+    else :
+        direction = Direction.NORD
     #rospy.logdebug("%d", direction)
 
 def eviterObstacle():
