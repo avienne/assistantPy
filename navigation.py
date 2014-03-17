@@ -256,6 +256,7 @@ def navigationturtle():
             pub.publish(twist)
         else:
 	    if status_robot == Status.SQUELETTE:
+                rospy.logdebug("Squelette")
                 twist = Twist()
 		twist.linear.x = VALEUR_X
 		if direction == Direction.NO :

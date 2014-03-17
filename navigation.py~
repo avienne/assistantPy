@@ -49,7 +49,7 @@ class PosObstacle:
     arriere = False
 
 #GLOBAL
-status_robot = Status.SQUELETTE
+status_robot = Status.NORMAL
 pos_obstacle = PosObstacle()
 num_user = 0
 timer_squelette = 0
