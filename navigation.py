@@ -13,7 +13,7 @@ VALEUR_X = 0.2
 VALEUR_ANGLE = 1
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
-ULTRASON_MAX_DIST = 150
+ULTRASON_MAX_DIST = 60
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
 SEUIL_OBSTACLE = 20
@@ -77,17 +77,21 @@ def stopServTimeOut(event):
 def obstacle():
     return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
 
-"""def twistDirection():
+def twistDirection():
     twist = Twist()
+    twist.linear.x = 0.1
     if direction == Direction.NORD:
         twist.linear.x = VALEUR_X
     elif direction == Direction.EST:
-        twist.angular.z = -1.0
+        twist.angular.z = -2.0
     elif direction == Direction.OUEST:
-        
+        twist.angular.z = 2.0
     elif direction == Direction.NE:
-    
-    elif direction == Direction.NO:"""
+        twist.angular.z = -1.0
+    elif direction == Direction.NO:
+        twist.angular.z = 1.0
+
+    return twist
         
 
 def majDirection() :
@@ -276,8 +280,8 @@ def navigationturtle():
 		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
 		    pub.publish(twist)
-            #elif status_robot == Status.NORMAL:
-                
+            elif status_robot == Status.NORMAL:
+                pub.publish(twistDirection())    
 		#elif status_robot == Status.RETOUR:
 		    #code retour base
 
