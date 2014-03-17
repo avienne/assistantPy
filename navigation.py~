@@ -294,6 +294,8 @@ def navigationturtle():
 		#elif status_robot == Status.RETOUR:
 		    #code retour base
 
+        rospy.sleep(0.1)
+
 if __name__ == '__main__':
     try:
         navigationturtle()
