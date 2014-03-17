@@ -76,7 +76,20 @@ def stopServTimeOut(event):
 
 def obstacle():
     return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
-	    
+
+"""def twistDirection():
+    twist = Twist()
+    if direction == Direction.NORD:
+        twist.linear.x = VALEUR_X
+    elif direction == Direction.EST:
+        
+    elif direction == Direction.OUEST:
+        
+    elif direction == Direction.NE:
+    
+    elif direction == Direction.NO:"""
+        
+
 def majDirection() :
     global direction, currentUs, status_robot
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
@@ -91,7 +104,6 @@ def majDirection() :
 	direction = Direction.NE
     else :
 	direction = Direction.NORD
-
     rospy.logdebug("%d", direction)
 
 def eviterObstacle():
@@ -256,6 +268,7 @@ def navigationturtle():
             pub.publish(twist)
         else:
 	    if status_robot == Status.SQUELETTE:
+                #rospy.logdebug("Squelette")
                 twist = Twist()
 		twist.linear.x = VALEUR_X
 		if direction == Direction.NO :
@@ -263,8 +276,8 @@ def navigationturtle():
 		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
 		    pub.publish(twist)
-		#elif status_robot == Status.NORMAL:
-
+            elif status_robot == Status.NORMAL:
+                
 		#elif status_robot == Status.RETOUR:
 		    #code retour base
 
