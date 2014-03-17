@@ -49,7 +49,7 @@ class PosObstacle:
     arriere = False
 
 #GLOBAL
-status_robot = Status.SQUELETTE
+status_robot = Status.NORMAL
 pos_obstacle = PosObstacle()
 num_user = 0
 timer_squelette = 0
@@ -82,7 +82,7 @@ def majDirection() :
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
         timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
-	# On lui fait lever la "tete"	
+	# On lui fait lever la "tete"
 	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
 	kinectMotorPub.publish(15)
     elif currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
@@ -97,6 +97,7 @@ def majDirection() :
 def eviterObstacle():
     global pos_obstacle
     twist = Twist()
+    twist.linear.x = 0.2
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
         twist.angular.z = -1.0
     elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
@@ -111,6 +112,10 @@ def eviterObstacle():
     return twist    
 
 #Fonctions callback
+def callbackDepartBase(msg):
+    global status_robot
+    status_robot = Status.NORMAL
+
 def callbackKinectNewUser(msg):
     global num_user, timer_squelette, status_robot
     if status_robot == Status.NORMAL:
@@ -237,6 +242,10 @@ def navigationturtle():
     rospy.Subscriber("/IR1", Range, callbackIRCoteDroit) #callback IR cote droit
     rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
     
+    #Inscription topic bouton depart
+    #rospy.Subscriber("/DepartBase", Range, callbackDepartBase)
+
+    #Inscription topic balance
     #rospy.Subscriber("/Balance", Range, callbackBalance) #callback balance
     
     #departBase()    
