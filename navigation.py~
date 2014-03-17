@@ -15,7 +15,7 @@ TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
 ULTRASON_MAX_DIST = 100
 ULTRASON_ERR = 20
-SEUIL_ARRET = 60
+SEUIL_ARRET = 31
 SEUIL_OBSTACLE = 30
 BALANCE_ERR = 1
 
@@ -96,7 +96,7 @@ def twistDirection():
         
 
 def majDirection() :
-    global direction, currentUs, status_robot
+    global direction, currentUs, status_robot, timer_serveur
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
         rospy.logdebug("SERVEUR")
