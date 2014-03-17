@@ -202,7 +202,7 @@ def callbackUltrasonAvant(msg):
             currentUs.ultrasonAvant = msg.range
             #rospy.logdebug("new UsAvant : %d", msg.range)
             majDirection()
-        else :
+        #else :
             #rospy.logdebug("outdated usavant")
 
 def callbackUltrasonGauche(msg):
@@ -216,7 +216,7 @@ def callbackUltrasonGauche(msg):
             currentUs.ultrasonGauche = msg.range
             #rospy.logdebug("new UsGauche : %d", msg.range)
             majDirection()
-        else : 
+        #else : 
             #rospy.logdebug("outdated usgauche")
 
 def callbackUltrasonDroit(msg):
@@ -230,7 +230,7 @@ def callbackUltrasonDroit(msg):
             currentUs.ultrasonDroit = msg.range
             #rospy.logdebug("new UsDroit : %d", msg.range)
             majDirection()
-        else :
+        #else :
             #rospy.logdebug("outdated usDroit")
 
 def navigationturtle():
