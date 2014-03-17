@@ -63,7 +63,7 @@ def stopFollowingTimeOut(event):
      global timer_squelette, status_robot, num_user
      status_robot = Status.NORMAL
      num_user = 0
-     rospy.logdebug("T O")
+     rospy.logdebug("T O FOLLOWING USER")
      timer_squelette.shutdown()
 
 def stopServTimeOut(event):
@@ -82,7 +82,7 @@ def twistDirection():
     if direction == Direction.NORD:
         twist.linear.x = VALEUR_X
     elif direction == Direction.EST:
-        
+        twist.angular.z = -1.0
     elif direction == Direction.OUEST:
         
     elif direction == Direction.NE:
@@ -104,7 +104,7 @@ def majDirection() :
 	direction = Direction.NE
     else :
 	direction = Direction.NORD
-    rospy.logdebug("%d", direction)
+    #rospy.logdebug("%d", direction)
 
 def eviterObstacle():
     global pos_obstacle
@@ -197,13 +197,13 @@ def callbackUltrasonAvant(msg):
         if msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonAvant = msg.range
-            rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.stamp.secs, msg.range)
+            #rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonAvant = msg.range
-            rospy.logdebug("new UsAvant : %d", msg.range)
+            #rospy.logdebug("new UsAvant : %d", msg.range)
             majDirection()
         else :
-            rospy.logdebug("outdated usavant")
+            #rospy.logdebug("outdated usavant")
 
 def callbackUltrasonGauche(msg):
     global status_robot, direction, currentUs
@@ -211,13 +211,13 @@ def callbackUltrasonGauche(msg):
         if  msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonGauche = msg.range
-            rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.stamp.secs, msg.range)
+            #rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonGauche = msg.range
-            rospy.logdebug("new UsGauche : %d", msg.range)
+            #rospy.logdebug("new UsGauche : %d", msg.range)
             majDirection()
         else : 
-            rospy.logdebug("outdated usgauche")
+            #rospy.logdebug("outdated usgauche")
 
 def callbackUltrasonDroit(msg):
     global status_robot, direction, currentUs
@@ -225,13 +225,13 @@ def callbackUltrasonDroit(msg):
         if msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonDroit = msg.range
-            rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.stamp.secs, msg.range)
+            #rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.seq ==  currentUs.timestamp :
             currentUs.ultrasonDroit = msg.range
-            rospy.logdebug("new UsDroit : %d", msg.range)
+            #rospy.logdebug("new UsDroit : %d", msg.range)
             majDirection()
         else :
-            rospy.logdebug("outdated usDroit")
+            #rospy.logdebug("outdated usDroit")
 
 def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
