@@ -13,7 +13,7 @@ VALEUR_X = 0.2
 VALEUR_ANGLE = 0.5
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
-ULTRASON_MAX_DIST = 100
+ULTRASON_MAX_DIST = 200
 ULTRASON_ERR = 20
 SEUIL_ARRET = 31
 SEUIL_OBSTACLE = 30
@@ -49,7 +49,7 @@ class PosObstacle:
     arriere = False
 
 #GLOBAL
-status_robot = Status.NORMAL
+status_robot = Status.SQUELETTE
 pos_obstacle = PosObstacle()
 num_user = 0
 timer_squelette = 0
@@ -68,12 +68,25 @@ def stopFollowingTimeOut(event):
 
 def stopServTimeOut(event):
     global status_robot
-    status_robot = Status.NORMAL
     rospy.logdebug("NORMAL")
     timer_serveur.shutdown()
     # On lui fait Baisser la "tete"	
     kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
-    kinectMotorPub.publish(-15)
+    kinectMotorPub.publish(0)
+    foundDirectionFree()
+    status_robot = Status.NORMAL
+
+def foundDirectionFree():
+    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
+    twist = Twist()
+    if currentUs.ultrasonGauche > currentUs.ultrasonDroit:
+        twist.angular.z = 2
+    else:
+        twist.angular.z = -2
+
+    pub.publish(twist)
+
+    rospy.sleep(0.1)
 
 def obstacle():
     return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
@@ -100,7 +113,12 @@ def majDirection() :
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
         rospy.logdebug("SERVEUR")
-        timer_squelette.shutdown()
+        if timer_squelette != 0:
+            timer_squelette.shutdown()
+        
+        if timer_serveur != 0:
+            timer_serveur.shutdown()
+
         timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
 	# On lui fait lever la "tete"
 	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
@@ -145,6 +163,8 @@ def callbackKinectNewUser(msg):
         status_robot = Status.SQUELETTE
         rospy.logdebug("SQUELETTE")
         num_user = msg.data
+        if timer_squelette != 0:
+            timer_squelette.shutdown()
         timer_squelette = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
 
 def callbackKinectDeleteUser(msg):
@@ -287,11 +307,12 @@ def navigationturtle():
 	    if status_robot == Status.SQUELETTE:
                 #rospy.logdebug("Squelette")
                 twist = Twist()
-		twist.linear.x = VALEUR_X
 		if direction == Direction.NO :
-		    twist.angular.z = VALEUR_ANGLE
-		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
+		elif direction == Direction.NE: 
+		    twist.angular.z = VALEUR_ANGLE
+                elif direction == Direction.NORD:
+                    twist.linear.x = VALEUR_X
                 pub.publish(twist)
             elif status_robot == Status.NORMAL:
                 pub.publish(twistDirection())    
