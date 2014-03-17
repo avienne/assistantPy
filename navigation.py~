@@ -100,6 +100,7 @@ def majDirection() :
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
         rospy.logdebug("SERVEUR")
+        timer_squelette.shutdown()
         timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
 	# On lui fait lever la "tete"
 	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
