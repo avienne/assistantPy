@@ -10,13 +10,13 @@ from sensor_msgs.msg import Range
 
 #CONSTANTE
 VALEUR_X = 0.2
-VALEUR_ANGLE = 1
+VALEUR_ANGLE = 0.5
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
 ULTRASON_MAX_DIST = 60
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
-SEUIL_OBSTACLE = 20
+SEUIL_OBSTACLE = 39
 BALANCE_ERR = 1
 
 #ENUM
@@ -83,13 +83,13 @@ def twistDirection():
     if direction == Direction.NORD:
         twist.linear.x = VALEUR_X
     elif direction == Direction.EST:
-        twist.angular.z = -2.0
+        twist.angular.z = -(VALEUR_ANGLE*2)
     elif direction == Direction.OUEST:
-        twist.angular.z = 2.0
+        twist.angular.z = (VALEUR_ANGLE*2)
     elif direction == Direction.NE:
-        twist.angular.z = -1.0
+        twist.angular.z = -VALEUR_ANGLE
     elif direction == Direction.NO:
-        twist.angular.z = 1.0
+        twist.angular.z = VALEUR_ANGLE
 
     return twist
         
@@ -116,14 +116,14 @@ def eviterObstacle():
     twist = Twist()
     twist.linear.x = 0.1
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
-        twist.angular.z = -1.0
+        twist.angular.z = -VALEUR_ANGLE
     elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
-        twist.angular.z = 1.0
+        twist.angular.z = VALEUR_ANGLE
     elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
         if not pos_obstacle.cote_gauche:
-            twist.angular.z = 2.0
+            twist.angular.z = VALEUR_ANGLE*2
         elif not pos_obstacle.cote_droit:
-            twist.angular.z = -2.0
+            twist.angular.z = -(VALEUR_ANGLE*2)
     else:
         twist.angular.z = 4.0
     return twist    
