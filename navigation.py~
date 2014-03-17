@@ -220,6 +220,7 @@ def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
+    #Inscription topic kinect
     rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
     
@@ -236,8 +237,7 @@ def navigationturtle():
     rospy.Subscriber("/IR5", Range, callbackIRCoteDroit) #callback IR cote droit
     rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
     
-    
-    #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
+    #rospy.Subscriber("/Balance", Range, callbackBalance) #callback balance
     
     #departBase()    
     global direction, status_robot, pos_obstacle, num_user

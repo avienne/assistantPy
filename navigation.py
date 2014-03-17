@@ -220,24 +220,24 @@ def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
+    #Inscription topic kinect
     rospy.Subscriber("/isUserVisible", Int32, callbackKinectNewUser) #callback kinect squelette detection
     rospy.Subscriber("/userDisapeared", Int32, callbackKinectDeleteUser) #callback kinect squelette detection
     
     #Inscription topic ultrason
-    rospy.Subscriber("/US1", Range, callbackUltrasonAvant) #callback UltrasonAvant
-    rospy.Subscriber("/US2", Range, callbackUltrasonGauche) #callback UltrasonGauche
-    rospy.Subscriber("/US3", Range, callbackUltrasonDroit) #callback UltrasonDroit
+    rospy.Subscriber("/US2", Range, callbackUltrasonAvant) #callback UltrasonAvant
+    rospy.Subscriber("/US3", Range, callbackUltrasonGauche) #callback UltrasonGauche
+    rospy.Subscriber("/US1", Range, callbackUltrasonDroit) #callback UltrasonDroit
     
     #Inscription topic infrarouge
-    rospy.Subscriber("/IR1", Range, callbackIRAvant) #callback IR avant
-    rospy.Subscriber("/IR2", Range, callbackIRAvantGauche) #callback IR avant gauche
-    rospy.Subscriber("/IR3", Range, callbackIRAvantDroit) #callback IR avant droit
-    rospy.Subscriber("/IR4", Range, callbackIRCoteGauche) #callback IR cote gauche
-    rospy.Subscriber("/IR5", Range, callbackIRCoteDroit) #callback IR cote droit
+    rospy.Subscriber("/IR3", Range, callbackIRAvant) #callback IR avant
+    rospy.Subscriber("/IR4", Range, callbackIRAvantGauche) #callback IR avant gauche
+    rospy.Subscriber("/IR2", Range, callbackIRAvantDroit) #callback IR avant droit
+    rospy.Subscriber("/IR5", Range, callbackIRCoteGauche) #callback IR cote gauche
+    rospy.Subscriber("/IR1", Range, callbackIRCoteDroit) #callback IR cote droit
     rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
     
-    
-    #rospy.Subscriber("camera/depth/image", Type??, callbackBalance) #callback balance
+    #rospy.Subscriber("/Balance", Range, callbackBalance) #callback balance
     
     #departBase()    
     global direction, status_robot, pos_obstacle, num_user
