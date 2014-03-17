@@ -128,6 +128,7 @@ def eviterObstacle():
             twist.angular.z = -(VALEUR_ANGLE*2)
     else:
         twist.angular.z = 4.0
+
     return twist    
 
 #Fonctions callback
@@ -271,8 +272,13 @@ def navigationturtle():
     global direction, status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if obstacle():
-            twist = eviterObstacle()
+            rospy.logdebug("Obstacle")
+            #twist = eviterObstacle()
             #pub.publish(twist)
+            twist = Twist()
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+            pub.publish(twist)
         else:
 	    if status_robot == Status.SQUELETTE:
                 #rospy.logdebug("Squelette")
