@@ -77,7 +77,7 @@ def stopServTimeOut(event):
 def obstacle():
     return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
 
-"""def twistDirection():
+def twistDirection():
     twist = Twist()
     if direction == Direction.NORD:
         twist.linear.x = VALEUR_X
@@ -87,7 +87,7 @@ def obstacle():
         
     elif direction == Direction.NE:
     
-    elif direction == Direction.NO:"""
+    elif direction == Direction.NO:
         
 
 def majDirection() :
@@ -109,7 +109,7 @@ def majDirection() :
 def eviterObstacle():
     global pos_obstacle
     twist = Twist()
-    twist.linear.x = 0.2
+    twist.linear.x = 0.1
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
         twist.angular.z = -1.0
     elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
@@ -276,7 +276,7 @@ def navigationturtle():
 		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
 		    pub.publish(twist)
-            elif status_robot == Status.NORMAL:
+            #elif status_robot == Status.NORMAL:
                 
 		#elif status_robot == Status.RETOUR:
 		    #code retour base
