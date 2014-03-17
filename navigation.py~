@@ -13,10 +13,10 @@ VALEUR_X = 0.2
 VALEUR_ANGLE = 0.5
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
-ULTRASON_MAX_DIST = 60
+ULTRASON_MAX_DIST = 100
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
-SEUIL_OBSTACLE = 39
+SEUIL_OBSTACLE = 30
 BALANCE_ERR = 1
 
 #ENUM
@@ -69,7 +69,8 @@ def stopFollowingTimeOut(event):
 def stopServTimeOut(event):
     global status_robot
     status_robot = Status.NORMAL
-    time_serveur.shutdown()
+    rospy.logdebug("NORMAL")
+    timer_serveur.shutdown()
     # On lui fait Baisser la "tete"	
     kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
     kinectMotorPub.publish(-15)
@@ -98,6 +99,7 @@ def majDirection() :
     global direction, currentUs, status_robot
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
+        rospy.logdebug("SERVEUR")
         timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
 	# On lui fait lever la "tete"
 	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
@@ -140,6 +142,7 @@ def callbackKinectNewUser(msg):
     global num_user, timer_squelette, status_robot
     if status_robot == Status.NORMAL:
         status_robot = Status.SQUELETTE
+        rospy.logdebug("SQUELETTE")
         num_user = msg.data
         timer_squelette = rospy.Timer(rospy.Duration(TIMEOUT_USER), stopFollowingTimeOut)
 
@@ -147,8 +150,8 @@ def callbackKinectDeleteUser(msg):
     global status_robot, num_user
     if status_robot == Status.SQUELETTE and msg.data == num_user:
         status_robot = Status.NORMAL
+        rospy.logdebug("NORMAL")
         num_user = 0
-	rospy.logdebug("Del User")
     	
 def callbackBalance(msg):
     global status_robot
