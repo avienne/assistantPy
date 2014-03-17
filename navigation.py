@@ -16,7 +16,7 @@ TIMEOUT_SERVEUR = 5
 ULTRASON_MAX_DIST = 60
 ULTRASON_ERR = 20
 SEUIL_ARRET = 60
-SEUIL_OBSTACLE = 20
+SEUIL_OBSTACLE = 39
 BALANCE_ERR = 1
 
 #ENUM
@@ -280,7 +280,7 @@ def navigationturtle():
 		    twist.angular.z = VALEUR_ANGLE
 		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
-		pub.publish(twist)
+                pub.publish(twist)
             elif status_robot == Status.NORMAL:
                 pub.publish(twistDirection())    
 		#elif status_robot == Status.RETOUR:

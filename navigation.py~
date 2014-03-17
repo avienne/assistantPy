@@ -280,7 +280,7 @@ def navigationturtle():
 		    twist.angular.z = VALEUR_ANGLE
 		elif direction == Direction.NE: 
 		    twist.angular.z = -VALEUR_ANGLE
-		    pub.publish(twist)
+                pub.publish(twist)
             elif status_robot == Status.NORMAL:
                 pub.publish(twistDirection())    
 		#elif status_robot == Status.RETOUR:
