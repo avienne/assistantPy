@@ -107,8 +107,8 @@ def majDirection() :
 	    direction = Direction.NO
         elif currentUs.ultrasonDroit > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonDroit < currentUs.ultrasonAvant + ULTRASON_ERR :
 	    direction = Direction.NE
-        else :
-	    direction = Direction.NORD
+    else :
+        direction = Direction.NORD
     #rospy.logdebug("%d", direction)
 
 def eviterObstacle():
