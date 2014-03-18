@@ -11,12 +11,12 @@ from kobuki_msgs.msg import Sound
 
 #CONSTANTE
 VALEUR_X = 0.2
-VALEUR_ANGLE = 0.4
+VALEUR_ANGLE = 0.5
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 10
 ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
-SEUIL_ARRET = 100
+SEUIL_ARRET = 50
 SEUIL_OBSTACLE = 39
 SEUIL_RETOUR = 31
 VARIATION_BALANCE = 20
@@ -60,6 +60,9 @@ num_user = 0
 timer_squelette = 0
 timer_serveur = 0
 direction = Direction.NORD
+arret_urgence_avant = False
+arret_urgence_avant_gauche = False
+arret_urgence_avant_droit = False
 currentUs = CurrentUltrasoundMesurement()
 poid_balance = 0
 bipbip = rospy.Publisher("/mobile_base/commands/sound", Sound)
@@ -145,6 +148,7 @@ def majDirection() :
         direction = Direction.NORD
 
 def eviterObstacle():
+    rospy.logdebug("EVITER OBSTACLE")
     global pos_obstacle
     twist = Twist()
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
@@ -156,9 +160,12 @@ def eviterObstacle():
         if not pos_obstacle.cote_gauche:
             twist.angular.z = VALEUR_ANGLE*2
         elif not pos_obstacle.cote_droit:
-            twist.angular.z = -(VALEUR_ANGLE*2)
-    else:
-        twist.angular.z = 4.0
+            twist.angular.z = -VALEUR_ANGLE*2
+    elif not pos_obstacle.av_gauche and not pos_obstacle.av_droit and pos_obstacle.avant:
+        if not pos_obstacle.cote_gauche:
+            twist.angular.z = VALEUR_ANGLE
+        else:
+            twist.angular.z = -VALEUR_ANGLE
 
     return twist    
 
@@ -218,30 +225,39 @@ def callbackBalance(msg):
 
 #Fonctions callback IR
 def callbackIRAvant(msg):
-    global pos_obstacle
-    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
-        rospy.signal_shutdown(0)
+    global pos_obstacle, arret_urgence_avant
+    if msg.range < SEUIL_CRITIQUE_OBSTACLE:
+        rospy.logdebug("SHUTDOWN IR AVANT avec %d", msg.range)
+        arret_urgence_avant = True
     elif msg.range <= SEUIL_OBSTACLE:
+        arret_urgence_avant = False
         pos_obstacle.avant = True
     else:
+        arret_urgence_avant = False
         pos_obstacle.avant = False
 
 def callbackIRAvantGauche(msg):
-    global pos_obstacle
-    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
-        rospy.signal_shutdown(0)
+    global pos_obstacle, arret_urgence_avant_gauche
+    if msg.range < SEUIL_CRITIQUE_OBSTACLE:
+        rospy.logdebug("SHUTDOWN IR AVANT GAUCHE avec %d", msg.range)
+        arret_urgence_avant_gauche = True
     elif msg.range <= SEUIL_OBSTACLE:
+        arret_urgence_avant_gauche = False
         pos_obstacle.av_gauche = True
     else:
+        arret_urgence_avant_gauche = False
         pos_obstacle.av_gauche = False
 
 def callbackIRAvantDroit(msg):
-    global pos_obstacle
-    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
-        rospy.signal_shutdown(0)
+    global pos_obstacle, arret_urgence_avant_droit
+    if msg.range < SEUIL_CRITIQUE_OBSTACLE:
+        rospy.logdebug("SHUTDOWN IR AVANT DROIT avec %d", msg.range)
+        arret_urgence_avant_droit = True
     elif msg.range <= SEUIL_OBSTACLE:
+        arret_urgence_avant_droit = False
         pos_obstacle.av_droit = True
     else:
+        arret_urgence_avant_droit = False
         pos_obstacle.av_droit = False
 
 def callbackIRCoteGauche(msg):
@@ -324,33 +340,32 @@ def navigationturtle():
     
     #departBase()
 
-    global direction, status_robot, pos_obstacle, num_user, pub
+    global direction, status_robot, pos_obstacle, num_user, pub, arret_urgence_avant, arret_urgence_avant_gauche, arret_urgence_avant_droit
     while not rospy.is_shutdown():
-        if obstacle():
-            rospy.logdebug("Obstacle")
-            twist = eviterObstacle()
-            pub.publish(twist)
-
-            rospy.sleep(ROSPY_SLEEP)
-
-            twist = Twist()
-            twist.linear.x = 0.0
-            twist.angular.z = 0.0
-            pub.publish(twist)
-        else:
-	    if status_robot == Status.SQUELETTE:
-                twist = Twist()
-		if direction == Direction.NO :
-		    twist.angular.z = -VALEUR_ANGLE
-		elif direction == Direction.NE: 
-		    twist.angular.z = VALEUR_ANGLE
-                elif direction == Direction.NORD:
-                    twist.linear.x = VALEUR_X
+        if not arret_urgence_avant and not arret_urgence_avant_gauche and not arret_urgence_avant_droit:
+            if obstacle():
+                rospy.logdebug("Obstacle")
+                twist = eviterObstacle()
                 pub.publish(twist)
-            elif status_robot == Status.NORMAL:
-                pub.publish(twistDirection())    
-	    #elif status_robot == Status.RETOUR:
-		#code retour base
+            else:
+	        if status_robot == Status.SQUELETTE:
+                    twist = Twist()
+		    if direction == Direction.NO :
+		        twist.angular.z = -VALEUR_ANGLE
+		    elif direction == Direction.NE: 
+		        twist.angular.z = VALEUR_ANGLE
+                    elif direction == Direction.NORD:
+                        twist.linear.x = VALEUR_X
+                    pub.publish(twist)
+                elif status_robot == Status.NORMAL:
+                    pub.publish(twistDirection())    
+	        #elif status_robot == Status.RETOUR:
+		    #code retour base
+        else:
+            twist = Twist()
+            twist.angular.x = 0.0
+
+            pub.publish(twist)
 
         rospy.sleep(ROSPY_SLEEP)
 
