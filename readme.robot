@@ -1,0 +1,26 @@
+Prérequis :
+	Installer Openni et Nite : Détection du squellette
+	Installer rosserial arduino node (http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup) : Comminucation avec l'arduino
+	Installer ros-hydro-kinect_aux : pour le moteur de la kinect
+
+
+Procédure de lancement du robot assistant
+
+	Setter les variables d'environnements de openni_tracker_OT 
+		source $PROJECTDIRECTORY/openni_tracker_OT/devel/setup.sh
+
+	Lancer turtlebot bringup
+		roslaunch turtlebot_bringup minimal.launch
+	
+	Lancer kinect_aux
+		rosrun kinect_aux node ??
+
+	Lancer openni_tracker
+		rosrun openni_tracker openni_tracker
+
+	Lancer rosserial
+		rosrun rosserial_python serial_node.py /dev/ttyACM0
+
+	Lancer navigation.py
+		python $PROJECTDIRECTORY/assistantPy/navigation.py
+
