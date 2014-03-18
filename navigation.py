@@ -7,10 +7,11 @@ import numpy as np
 import math
 from std_msgs.msg import Int32, Float64
 from sensor_msgs.msg import Range
+from kobuki_msgs.msg import Sound
 
 #CONSTANTE
 VALEUR_X = 0.2
-VALEUR_ANGLE = 0.5
+VALEUR_ANGLE = 0.4
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 10
 ULTRASON_MAX_DIST = 150
@@ -18,7 +19,8 @@ ULTRASON_ERR = 20
 SEUIL_ARRET = 100
 SEUIL_OBSTACLE = 39
 SEUIL_RETOUR = 31
-VARIATION_BALANCE = 5
+VARIATION_BALANCE = 20
+SEUIL_CRITIQUE_OBSTACLE = 15
 ROSPY_SLEEP = 0.1
 
 #ENUM
@@ -60,6 +62,9 @@ timer_serveur = 0
 direction = Direction.NORD
 currentUs = CurrentUltrasoundMesurement()
 poid_balance = 0
+bipbip = rospy.Publisher("/mobile_base/commands/sound", Sound)
+kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
+pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
 
 #FUNCTION
 #Utils
@@ -71,20 +76,20 @@ def stopFollowingTimeOut(event):
      timer_squelette.shutdown()
 
 def stopServ():
-    global status_robot
-    rospy.logdebug("NORMAL")
+    global status_robot, poid_balance, kinectMotorPub
+    rospy.logdebug("NORMAL/STOP SERV")
     timer_serveur.shutdown()
     # On lui fait Baisser la "tete"	
-    kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
     kinectMotorPub.publish(0)
     foundDirectionFree()
     status_robot = Status.NORMAL
+    poid_balance = 0
 
 def stopServTimeOut(event):
     stopServ()
 
 def foundDirectionFree():
-    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
+    global pub
     twist = Twist()
     if currentUs.ultrasonGauche > currentUs.ultrasonDroit:
         twist.angular.z = 2.0
@@ -116,10 +121,11 @@ def twistDirection():
         
 
 def majDirection() :
-    global direction, currentUs, status_robot, timer_serveur
+    global direction, currentUs, status_robot, timer_serveur, bipbip, kinectMotorPub
     if currentUs.ultrasonAvant <= SEUIL_ARRET:
         status_robot = Status.SERVEUR
         rospy.logdebug("SERVEUR")
+        bipbip.publish(Sound(6))
         if timer_squelette != 0:
             timer_squelette.shutdown()
         
@@ -127,8 +133,8 @@ def majDirection() :
             timer_serveur.shutdown()
 
         timer_serveur = rospy.Timer(rospy.Duration(TIMEOUT_SERVEUR), stopServTimeOut)
+
 	# On lui fait lever la "tete"
-	kinectMotorPub = rospy.Publisher('/tilt_angle', Float64)
 	kinectMotorPub.publish(15)
     elif currentUs.ultrasonGauche <= ULTRASON_MAX_DIST or currentUs.ultrasonDroit <= ULTRASON_MAX_DIST or currentUs.ultrasonAvant <= ULTRASON_MAX_DIST :
         if currentUs.ultrasonGauche > currentUs.ultrasonAvant - ULTRASON_ERR and currentUs.ultrasonGauche < currentUs.ultrasonAvant + ULTRASON_ERR :
@@ -142,13 +148,11 @@ def eviterObstacle():
     global pos_obstacle
     twist = Twist()
     if pos_obstacle.av_gauche and not pos_obstacle.av_droit:
-        #twist.linear.x = 0.1
         twist.angular.z = -VALEUR_ANGLE
     elif pos_obstacle.av_droit and not pos_obstacle.av_gauche:
-        #twist.linear.x = 0.1
+        rospy.logdebug("GO GAUCHE")
         twist.angular.z = VALEUR_ANGLE
     elif pos_obstacle.av_gauche and pos_obstacle.av_droit:
-        #twist.linear.x = 0.1
         if not pos_obstacle.cote_gauche:
             twist.angular.z = VALEUR_ANGLE*2
         elif not pos_obstacle.cote_droit:
@@ -159,28 +163,29 @@ def eviterObstacle():
     return twist    
 
 def departBase():
-    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
+    global pub
+    
     twist = Twist()
-
     twist.linear.x = -VALEUR_X
     pub.publish(twist)
 
     rospy.sleep(ROSPY_SLEEP)
 
-    twist.linear.x = 0
-    twist.angular.z = 4
+    twist = Twist()
+    twist.angular.z = 3.0
     pub.publish(twist)
 
     rospy.sleep(ROSPY_SLEEP)
 
 #Fonctions callback
 def callbackBouton(msg):
-    global status_robot
-    if status_robot == Status.BASE:
-        status_robot = Status.NORMAL
-        departBase()
-    else:
-        rospy.shutdown()
+    if msg.range == 1:
+        global status_robot
+        if status_robot == Status.BASE:
+            status_robot = Status.NORMAL
+            departBase()
+        else:
+            rospy.signal_shutdown(0)
 
 def callbackKinectNewUser(msg):
     global num_user, timer_squelette, status_robot
@@ -200,7 +205,7 @@ def callbackKinectDeleteUser(msg):
         num_user = 0
     	
 def callbackBalance(msg):
-    global status_robot
+    global status_robot, poid_balance
     if msg.range <= SEUIL_RETOUR:
         rospy.logdebug("RETOUR")
         status_robot = Status.RETOUR
@@ -208,26 +213,33 @@ def callbackBalance(msg):
         if status_robot == Status.SERVEUR and poid_balance == 0:
             poid_balance = msg.range
         elif status_robot == Status.SERVEUR and poid_balance != 0 and msg.range <= poid_balance - VARIATION_BALANCE:
+            rospy.logdebug("VARIATION BALANCE")
             stopServ()
 
 #Fonctions callback IR
 def callbackIRAvant(msg):
     global pos_obstacle
-    if msg.range <= SEUIL_OBSTACLE:
+    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
+        rospy.signal_shutdown(0)
+    elif msg.range <= SEUIL_OBSTACLE:
         pos_obstacle.avant = True
     else:
         pos_obstacle.avant = False
 
 def callbackIRAvantGauche(msg):
     global pos_obstacle
-    if msg.range <= SEUIL_OBSTACLE:
+    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
+        rospy.signal_shutdown(0)
+    elif msg.range <= SEUIL_OBSTACLE:
         pos_obstacle.av_gauche = True
     else:
         pos_obstacle.av_gauche = False
 
 def callbackIRAvantDroit(msg):
     global pos_obstacle
-    if msg.range <= SEUIL_OBSTACLE:
+    if msg.range <= SEUIL_CRITIQUE_OBSTACLE:
+        rospy.signal_shutdown(0)
+    elif msg.range <= SEUIL_OBSTACLE:
         pos_obstacle.av_droit = True
     else:
         pos_obstacle.av_droit = False
@@ -285,7 +297,6 @@ def callbackUltrasonDroit(msg):
             majDirection()
 
 def navigationturtle():
-    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
     rospy.init_node('navigationturtle', log_level=rospy.DEBUG)
 
     #Inscription topic kinect
@@ -311,14 +322,17 @@ def navigationturtle():
     #Inscription topic balance
     rospy.Subscriber("/masse", Range, callbackBalance) #callback balance
     
-    departBase()
+    #departBase()
 
-    global direction, status_robot, pos_obstacle, num_user
+    global direction, status_robot, pos_obstacle, num_user, pub
     while not rospy.is_shutdown():
         if obstacle():
             rospy.logdebug("Obstacle")
-            #twist = eviterObstacle()
-            #pub.publish(twist)
+            twist = eviterObstacle()
+            pub.publish(twist)
+
+            rospy.sleep(ROSPY_SLEEP)
+
             twist = Twist()
             twist.linear.x = 0.0
             twist.angular.z = 0.0

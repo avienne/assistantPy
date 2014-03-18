@@ -13,7 +13,7 @@ Procédure de lancement du robot assistant
 		roslaunch turtlebot_bringup minimal.launch
 	
 	Lancer kinect_aux
-		rosrun kinect_aux kinect_aux_node
+		rosrun kinect_aux node kinect_aux node
 
 	Lancer openni_tracker
 		rosrun openni_tracker openni_tracker
