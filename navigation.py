@@ -13,11 +13,11 @@ VALEUR_X = 0.2
 VALEUR_ANGLE = 0.5
 TIMEOUT_USER = 20
 TIMEOUT_SERVEUR = 5
-ULTRASON_MAX_DIST = 200
+ULTRASON_MAX_DIST = 150
 ULTRASON_ERR = 20
-SEUIL_ARRET = 50
+SEUIL_ARRET = 100
 SEUIL_OBSTACLE = 39
-BALANCE_ERR = 1
+SEUIL_RETOUR = 31
 
 #ENUM
 class Status:
@@ -77,12 +77,12 @@ def stopServTimeOut(event):
     status_robot = Status.NORMAL
 
 def foundDirectionFree():
-    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
+    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
     twist = Twist()
     if currentUs.ultrasonGauche > currentUs.ultrasonDroit:
-        twist.angular.z = 2
+        twist.angular.z = 2.0
     else:
-        twist.angular.z = -2
+        twist.angular.z = -2.0
 
     pub.publish(twist)
 
@@ -130,7 +130,6 @@ def majDirection() :
 	    direction = Direction.NE
     else :
         direction = Direction.NORD
-    #rospy.logdebug("%d", direction)
 
 def eviterObstacle():
     global pos_obstacle
@@ -176,7 +175,8 @@ def callbackKinectDeleteUser(msg):
     	
 def callbackBalance(msg):
     global status_robot
-    if msg.range >= 0 and msg.range <= BALANCE_ERR:
+    if msg.range <= SEUIL_RETOUR:
+        rospy.logdebug("RETOUR")
         status_robot = Status.RETOUR
 
 #Fonctions callback IR
@@ -234,9 +234,7 @@ def callbackUltrasonAvant(msg):
             currentUs.ultrasonAvant = msg.range
             #rospy.logdebug("new UsAvant : %d", msg.range)
             majDirection()
-        #else :
-            #rospy.logdebug("outdated usavant")
-
+       
 def callbackUltrasonGauche(msg):
     global status_robot, direction, currentUs
     if status_robot == Status.SQUELETTE :
@@ -248,8 +246,6 @@ def callbackUltrasonGauche(msg):
             currentUs.ultrasonGauche = msg.range
             #rospy.logdebug("new UsGauche : %d", msg.range)
             majDirection()
-        #else : 
-            #rospy.logdebug("outdated usgauche")
 
 def callbackUltrasonDroit(msg):
     global status_robot, direction, currentUs
@@ -262,8 +258,6 @@ def callbackUltrasonDroit(msg):
             currentUs.ultrasonDroit = msg.range
             #rospy.logdebug("new UsDroit : %d", msg.range)
             majDirection()
-        #else :
-            #rospy.logdebug("outdated usDroit")
 
 def navigationturtle():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)     
@@ -287,10 +281,10 @@ def navigationturtle():
     rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
     
     #Inscription topic bouton depart
-    #rospy.Subscriber("/DepartBase", Range, callbackDepartBase)
+    rospy.Subscriber("/bouton", Range, callbackDepartBase)
 
     #Inscription topic balance
-    #rospy.Subscriber("/Balance", Range, callbackBalance) #callback balance
+    rospy.Subscriber("/masse", Range, callbackBalance) #callback balance
     
     #departBase()    
     global direction, status_robot, pos_obstacle, num_user
@@ -316,8 +310,8 @@ def navigationturtle():
                 pub.publish(twist)
             elif status_robot == Status.NORMAL:
                 pub.publish(twistDirection())    
-		#elif status_robot == Status.RETOUR:
-		    #code retour base
+	    #elif status_robot == Status.RETOUR:
+		#code retour base
 
         rospy.sleep(0.1)
 
