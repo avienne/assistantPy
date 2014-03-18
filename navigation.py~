@@ -18,6 +18,7 @@ ULTRASON_ERR = 20
 SEUIL_ARRET = 100
 SEUIL_OBSTACLE = 39
 SEUIL_RETOUR = 31
+VARIATION_BALANCE = 5
 
 #ENUM
 class Status:
@@ -56,6 +57,7 @@ timer_squelette = 0
 timer_serveur = 0
 direction = Direction.NORD
 currentUs = CurrentUltrasoundMesurement()
+poid_balance = 0
 
 #FUNCTION
 #Utils

@@ -18,6 +18,7 @@ ULTRASON_ERR = 20
 SEUIL_ARRET = 100
 SEUIL_OBSTACLE = 39
 SEUIL_RETOUR = 31
+VARIATION_BALANCE = 5
 
 #ENUM
 class Status:
@@ -56,6 +57,7 @@ timer_squelette = 0
 timer_serveur = 0
 direction = Direction.NORD
 currentUs = CurrentUltrasoundMesurement()
+poid_balance = 0
 
 #FUNCTION
 #Utils
@@ -178,6 +180,13 @@ def callbackBalance(msg):
     if msg.range <= SEUIL_RETOUR:
         rospy.logdebug("RETOUR")
         status_robot = Status.RETOUR
+    else:
+        if status_robot == Status.SERVEUR and poid_balance == 0:
+            poid_balance = msg.range
+
+        if status_robot == Status.SERVEUR and poid_balance != 0:
+            status_robot = status.NORMAL
+            timer_serveur.shutdown()
 
 #Fonctions callback IR
 def callbackIRAvant(msg):
