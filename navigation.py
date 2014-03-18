@@ -19,6 +19,7 @@ SEUIL_ARRET = 100
 SEUIL_OBSTACLE = 39
 SEUIL_RETOUR = 31
 VARIATION_BALANCE = 5
+ROSPY_SLEEP = 0.1
 
 #ENUM
 class Status:
@@ -26,6 +27,7 @@ class Status:
     RETOUR = 1
     SQUELETTE = 2
     SERVEUR = 3
+    BASE = 4
 
 class Direction : 
     NORD = 0
@@ -68,7 +70,7 @@ def stopFollowingTimeOut(event):
      rospy.logdebug("T O FOLLOWING USER")
      timer_squelette.shutdown()
 
-def stopServTimeOut(event):
+def stopServ():
     global status_robot
     rospy.logdebug("NORMAL")
     timer_serveur.shutdown()
@@ -77,6 +79,9 @@ def stopServTimeOut(event):
     kinectMotorPub.publish(0)
     foundDirectionFree()
     status_robot = Status.NORMAL
+
+def stopServTimeOut(event):
+    stopServ()
 
 def foundDirectionFree():
     pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
@@ -88,7 +93,7 @@ def foundDirectionFree():
 
     pub.publish(twist)
 
-    rospy.sleep(0.1)
+    rospy.sleep(ROSPY_SLEEP)
 
 def obstacle():
     return pos_obstacle.avant or pos_obstacle.av_gauche or pos_obstacle.av_droite
@@ -153,10 +158,29 @@ def eviterObstacle():
 
     return twist    
 
+def departBase():
+    pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist)
+    twist = Twist()
+
+    twist.linear.x = -VALEUR_X
+    pub.publish(twist)
+
+    rospy.sleep(ROSPY_SLEEP)
+
+    twist.linear.x = 0
+    twist.angular.z = 4
+    pub.publish(twist)
+
+    rospy.sleep(ROSPY_SLEEP)
+
 #Fonctions callback
-def callbackDepartBase(msg):
+def callbackBouton(msg):
     global status_robot
-    status_robot = Status.NORMAL
+    if status_robot == Status.BASE:
+        status_robot = Status.NORMAL
+        departBase()
+    else:
+        rospy.shutdown()
 
 def callbackKinectNewUser(msg):
     global num_user, timer_squelette, status_robot
@@ -183,10 +207,8 @@ def callbackBalance(msg):
     else:
         if status_robot == Status.SERVEUR and poid_balance == 0:
             poid_balance = msg.range
-
-        if status_robot == Status.SERVEUR and poid_balance != 0:
-            status_robot = status.NORMAL
-            timer_serveur.shutdown()
+        elif status_robot == Status.SERVEUR and poid_balance != 0 and msg.range <= poid_balance - VARIATION_BALANCE:
+            stopServ()
 
 #Fonctions callback IR
 def callbackIRAvant(msg):
@@ -238,10 +260,8 @@ def callbackUltrasonAvant(msg):
         if msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonAvant = msg.range
-            #rospy.logdebug("MAJ seq : %d US avant : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonAvant = msg.range
-            #rospy.logdebug("new UsAvant : %d", msg.range)
             majDirection()
        
 def callbackUltrasonGauche(msg):
@@ -250,10 +270,8 @@ def callbackUltrasonGauche(msg):
         if  msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonGauche = msg.range
-            #rospy.logdebug("MAJ seq : %d US Gauche : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.stamp.secs ==  currentUs.timestamp :
             currentUs.ultrasonGauche = msg.range
-            #rospy.logdebug("new UsGauche : %d", msg.range)
             majDirection()
 
 def callbackUltrasonDroit(msg):
@@ -262,10 +280,8 @@ def callbackUltrasonDroit(msg):
         if msg.header.stamp.secs >  currentUs.timestamp :
 	    currentUs.timestamp = msg.header.stamp.secs
             currentUs.ultrasonDroit = msg.range
-            #rospy.logdebug("MAJ seq : %d US Droit : %d", msg.header.stamp.secs, msg.range)
         elif msg.header.seq ==  currentUs.timestamp :
             currentUs.ultrasonDroit = msg.range
-            #rospy.logdebug("new UsDroit : %d", msg.range)
             majDirection()
 
 def navigationturtle():
@@ -289,13 +305,14 @@ def navigationturtle():
     rospy.Subscriber("/IR1", Range, callbackIRCoteDroit) #callback IR cote droit
     rospy.Subscriber("/IR6", Range, callbackIRArriere) #callback IR arriere
     
-    #Inscription topic bouton depart
-    rospy.Subscriber("/bouton", Range, callbackDepartBase)
+    #Inscription topic bouton (depart ou arret)
+    rospy.Subscriber("/bouton", Range, callbackBouton)
 
     #Inscription topic balance
     rospy.Subscriber("/masse", Range, callbackBalance) #callback balance
     
-    #departBase()    
+    departBase()
+
     global direction, status_robot, pos_obstacle, num_user
     while not rospy.is_shutdown():
         if obstacle():
@@ -308,7 +325,6 @@ def navigationturtle():
             pub.publish(twist)
         else:
 	    if status_robot == Status.SQUELETTE:
-                #rospy.logdebug("Squelette")
                 twist = Twist()
 		if direction == Direction.NO :
 		    twist.angular.z = -VALEUR_ANGLE
@@ -322,7 +338,7 @@ def navigationturtle():
 	    #elif status_robot == Status.RETOUR:
 		#code retour base
 
-        rospy.sleep(0.1)
+        rospy.sleep(ROSPY_SLEEP)
 
 if __name__ == '__main__':
     try:
