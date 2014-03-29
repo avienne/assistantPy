@@ -10,17 +10,43 @@ from sensor_msgs.msg import Range
 from kobuki_msgs.msg import Sound
 
 #CONSTANTE
+# Correspond a la valeur d acceleration du robot en X
 VALEUR_X = 0.2
+
+# Valeur de l angle en radiant lors des prises de decisions du robot
 VALEUR_ANGLE = 0.5
+
+# Timeout (en s) correspondant à l abandon du suivi d une personne
 TIMEOUT_USER = 20
+
+# Timeout (en s) correspondant a l attente du robot qu une personne se serve
+# lorsqu'il est en mode serveur
 TIMEOUT_SERVEUR = 10
+
+# Distance (en cm) a partir de laquelle on prend en compte les ultrasons pour se
+# diriger vers une personne
 ULTRASON_MAX_DIST = 150
+
+# Marge de decallage (en cm) entre deux capteurs ultrasons pour un même obstacle
 ULTRASON_ERR = 20
+
+# Seuil (en cm) a partir duquel le robot s arrete pour servir une personne
 SEUIL_ARRET = 50
+
+# Seuil (en cm) a partir duquel on essaye d eviter un obstacle (capteurs infrarouge)
 SEUIL_OBSTACLE = 39
+
+# Seuil (en g) de la balance à partir duquel on déclenche un retour à la base
 SEUIL_RETOUR = 31
+
+# Variation (en g) de la balance entre deux mesures pour savoir si une personne
+# s est servi
 VARIATION_BALANCE = 20
+
+# Seuil (en cm) critique à partir duquel le robot arrete de bouger
 SEUIL_CRITIQUE_OBSTACLE = 15
+
+# Valeur des differents rospy.sleep
 ROSPY_SLEEP = 0.1
 
 #ENUM
